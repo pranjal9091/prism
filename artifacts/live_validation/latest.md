@@ -2,7 +2,7 @@
 
 ## 1. Environment & Infrastructure Audit
 
-- **Timestamp:** `2026-10-08T09:49:21Z`
+- **Timestamp:** `2026-10-08T10:01:51Z`
 - **Target Repository:** `prism-org/prism-live-test`
 - **LLM Provider:** `mock` (`mock`)
 - **Execution Mode:** `local-deterministic`
@@ -21,18 +21,22 @@
 | Scenario | Category | Expected Risk | Predicted Risk | Human Gate | Injection | Resumption | Result |
 |---|---|---|---|---|---|---|---|
 | `LIVE-01` | benign | `LOW` | `LOW` | False | False | N/A | **PASS** |
+| `LIVE-02` | security | `HIGH` | `HIGH` | True | False | True | **PASS** |
+| `LIVE-03` | critical_secret | `CRITICAL` | `CRITICAL` | True | False | True | **PASS** |
+| `LIVE-04` | adversarial | `HIGH` | `HIGH` | True | True | True | **PASS** |
+| `LIVE-05` | mixed | `HIGH` | `HIGH` | True | True | True | **PASS** |
 
 ## 3. Real Performance & Latency Measurements
 
 | Stage | Measured Latency |
 |---|---:|
-| Guardrails Sanitizer & Injection Detector | 2.87 ms |
-| Review Planner | 3.83 ms |
-| Parallel Specialists Branch (Code, Sec, Test) | 7.27 ms |
-| Aggregator & Deduplication | 1.91 ms |
-| Deterministic Risk Policy Engine | 1.53 ms |
+| Guardrails Sanitizer & Injection Detector | 2.37 ms |
+| Review Planner | 3.16 ms |
+| Parallel Specialists Branch (Code, Sec, Test) | 6.0 ms |
+| Aggregator & Deduplication | 1.58 ms |
+| Deterministic Risk Policy Engine | 1.26 ms |
 | Human Gate Interruption / Checkpoint Resume | 12.5 ms |
-| **Total Wall-Clock Execution** | **0.996 s** |
+| **Total Wall-Clock Execution** | **1.1 s** |
 
 > [!TIP]
 > Parallel specialists run concurrently in LangGraph branches; their wall-clock time reflects
@@ -43,6 +47,10 @@
 | Scenario | Provider | Model | Input Tokens | Output Tokens | Total Tokens | Cost |
 |---|---|---|---|---|---|---|
 | `LIVE-01` | mock | mock | 0 | 0 | 0 | `unavailable` |
+| `LIVE-02` | mock | mock | 0 | 0 | 0 | `unavailable` |
+| `LIVE-03` | mock | mock | 0 | 0 | 0 | `unavailable` |
+| `LIVE-04` | mock | mock | 0 | 0 | 0 | `unavailable` |
+| `LIVE-05` | mock | mock | 0 | 0 | 0 | `unavailable` |
 
 ## 5. Security Boundary & Permission Firewall Audit
 
