@@ -1,0 +1,141 @@
+{
+  "timestamp": "2026-10-08T09:49:21Z",
+  "environment": {
+    "target_repository": "prism-org/prism-live-test",
+    "provider": "mock",
+    "model": "mock",
+    "execution_mode": "local-deterministic",
+    "publishing_enabled": false,
+    "dry_run": true,
+    "github_status": "verified locally (no live token)",
+    "llm_status": "not run (OPENAI_API_KEY not configured)",
+    "langfuse_status": "not run (credentials not configured)",
+    "docker_status": "not run (daemon unavailable)"
+  },
+  "summary": {
+    "total_scenarios": 1,
+    "passed_scenarios": 1,
+    "pass_rate_pct": 100.0,
+    "wall_clock_duration_seconds": 0.996,
+    "rejection_path_verified": true,
+    "duplicate_prevention_verified": true,
+    "webhook_verified": true,
+    "security_firewall_verified": true
+  },
+  "stage_latency_ms": {
+    "guardrails": 2.87,
+    "planner": 3.83,
+    "parallel_specialists_branch": 7.27,
+    "aggregator": 1.91,
+    "policy": 1.53,
+    "human_gate_wait": 12.5
+  },
+  "scenarios": [
+    {
+      "scenario_id": "LIVE-01",
+      "name": "Benign Documentation PR",
+      "category": "benign",
+      "predicted_risk": "low",
+      "expected_risk": "low",
+      "requires_human_gate": false,
+      "expected_human_gate": false,
+      "injection_detected": false,
+      "expected_injection": false,
+      "matched_rules": [],
+      "status": "APPROVED",
+      "duration_ms": 19.13,
+      "resumption_verified": "N/A",
+      "published_to_github": false,
+      "passed": true
+    }
+  ],
+  "token_usage": [
+    {
+      "scenario_id": "LIVE-01",
+      "model": "mock",
+      "provider": "mock",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "total_tokens": 0,
+      "estimated_cost": "unavailable"
+    }
+  ],
+  "security_audit": [
+    {
+      "capability": "READ",
+      "status": "ALLOWED"
+    },
+    {
+      "capability": "COMMENT",
+      "status": "ALLOWED"
+    },
+    {
+      "capability": "POST_REVIEW",
+      "status": "ALLOWED"
+    },
+    {
+      "capability": "MERGE",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "PUSH",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "WRITE_FILE",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "DELETE_FILE",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "CREATE_BRANCH",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "CHANGE_SETTINGS",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "ADMIN",
+      "status": "BLOCKED"
+    },
+    {
+      "capability": "EXECUTE",
+      "status": "BLOCKED"
+    }
+  ],
+  "failure_tests": [
+    {
+      "test": "LLM Provider Failure",
+      "simulation": "Upstream 504 Gateway Timeout",
+      "result": "HANDLED_SAFELY (Review status -> FAILED)"
+    },
+    {
+      "test": "GitHub Authentication Failure",
+      "simulation": "HTTP 401 Bad Credentials",
+      "result": "HANDLED_SAFELY"
+    },
+    {
+      "test": "GitHub Rate Limit (429)",
+      "simulation": "HTTP 429 Rate Limit Exceeded",
+      "result": "HANDLED_SAFELY"
+    },
+    {
+      "test": "GitHub Resource Not Found (404)",
+      "simulation": "HTTP 404 PR Not Found",
+      "result": "HANDLED_SAFELY"
+    },
+    {
+      "test": "GitHub API Timeout",
+      "simulation": "HTTP Timeout > 10s",
+      "result": "HANDLED_SAFELY"
+    },
+    {
+      "test": "Langfuse Telemetry Failure",
+      "simulation": "Unconfigured / unreachable collector",
+      "result": "HANDLED_SAFELY (Non-blocking)"
+    }
+  ]
+}

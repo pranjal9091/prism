@@ -1,0 +1,36 @@
+services:
+  prism:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: prism-service
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - CHECKPOINT_DB_PATH=/data/prism_checkpoints.db
+      - REVIEW_DB_PATH=/data/prism_reviews.db
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+      - LANGFUSE_ENABLED=false
+      - GITHUB_PUBLISHING_ENABLED=false
+      # Optional external credentials (can be set in host .env)
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      - PRISM_API_KEY=${PRISM_API_KEY:-}
+      - LANGFUSE_PUBLIC_KEY=${LANGFUSE_PUBLIC_KEY:-}
+      - LANGFUSE_SECRET_KEY=${LANGFUSE_SECRET_KEY:-}
+      - LANGFUSE_HOST=${LANGFUSE_HOST:-https://cloud.langfuse.com}
+    volumes:
+      # Persistent volume for SQLite review records and LangGraph checkpoints
+      - prism-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  prism-data:
+    driver: local

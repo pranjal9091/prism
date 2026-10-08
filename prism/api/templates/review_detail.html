@@ -1,0 +1,444 @@
+{% extends "base.html" %}
+
+{% block title %}Review Detail #{{ review.pull_number }} — PRism{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-[1200px]">
+
+  <!-- Top Navigation & Breadcrumbs -->
+  <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center gap-2 text-xs text-[#78716C]">
+      <a href="/" class="inline-flex items-center gap-1 font-medium text-[#1C1917] hover:text-[#B45309] transition-colors py-1">
+        <span>&larr;</span>
+        <span>Pull Requests</span>
+      </a>
+      <span class="text-[#D4D4CE]">/</span>
+      <span class="text-[#44403C] font-mono">{{ review.repository }}</span>
+      <span class="text-[#D4D4CE]">/</span>
+      <span class="text-[#1C1917] font-mono font-semibold">#{{ review.pull_number }}</span>
+    </div>
+
+    <!-- Review Identity Badges -->
+    <div class="flex items-center gap-2 text-[11px] font-mono text-[#78716C]">
+      <button type="button" 
+              onclick="copyToClipboard('{{ review.review_id }}', this)" 
+              class="px-2 py-0.5 rounded border border-[#E4E4E1] bg-[#FFFFFF] hover:bg-[#F4F4F2] text-[#57534E] transition cursor-pointer" 
+              title="Click to copy Review ID">
+        id: {{ review.review_id[:12] }}...
+      </button>
+
+      <button type="button" 
+              onclick="copyToClipboard('{{ review.head_sha }}', this)" 
+              class="px-2 py-0.5 rounded border border-[#E4E4E1] bg-[#FFFFFF] hover:bg-[#F4F4F2] text-[#57534E] transition cursor-pointer" 
+              title="Click to copy Commit SHA">
+        sha: {{ review.head_sha[:7] }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Review Header Panel -->
+  <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-5 shadow-2xs">
+    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      
+      <!-- Primary Heading -->
+      <div class="space-y-2">
+        <div class="flex items-center gap-2.5 flex-wrap">
+          <h1 class="text-xl font-semibold tracking-tight text-[#1C1917]">
+            {{ review.repository }} <span class="font-mono text-[#78716C]">#{{ review.pull_number }}</span>
+          </h1>
+
+          <!-- Risk Level Indicator -->
+          {% if review.risk_level == "critical" %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
+              CRITICAL RISK
+            </span>
+          {% elif review.risk_level == "high" %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-semibold bg-[#FFEDD5] text-[#9A3412] border border-[#FDBA74]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#EA580C]"></span>
+              HIGH RISK
+            </span>
+          {% elif review.risk_level == "medium" %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium bg-[#FEF9C3] text-[#854D0E] border border-[#FDE047]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#CA8A04]"></span>
+              MEDIUM RISK
+            </span>
+          {% else %}
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-mono font-medium bg-[#DCFCE7] text-[#166534] border border-[#86EFAC]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>
+              LOW RISK
+            </span>
+          {% endif %}
+
+          <!-- Lifecycle Status Badge -->
+          {% if review.status.value == "WAITING_FOR_APPROVAL" %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-[#FFFBEB] text-[#B45309] border border-[#FCD34D]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#D97706]"></span>
+              Waiting for Human Approval
+            </span>
+          {% elif review.status.value == "PUBLISHED" %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>
+              Published to GitHub
+            </span>
+          {% elif review.status.value == "APPROVED" %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
+              Approved by Human
+            </span>
+          {% elif review.status.value == "REJECTED" %}
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-xs font-medium bg-[#F4F4F5] text-[#52525B] border border-[#D4D4D8]">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#71717A]"></span>
+              Rejected by Human
+            </span>
+          {% else %}
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-[#F4F4F2] text-[#57534E] border border-[#E4E4E1]">
+              {{ review.status.value }}
+            </span>
+          {% endif %}
+        </div>
+
+        <!-- Metadata Strip -->
+        <div class="text-xs text-[#78716C] font-mono flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span>Review: {{ review.review_id }}</span>
+          <span class="text-[#D4D4CE]">&bull;</span>
+          <span>Commit: {{ review.head_sha }}</span>
+          <span class="text-[#D4D4CE]">&bull;</span>
+          <span>{{ review.created_at[:19].replace('T', ' ') }}</span>
+        </div>
+      </div>
+
+      <!-- Quick Tally Counter -->
+      <div class="flex items-center gap-2 text-xs shrink-0 bg-[#F9F9F8] p-2 rounded border border-[#E4E4E1]">
+        <div class="text-center px-2">
+          <div class="font-mono font-semibold text-sm {% if review.critical_count > 0 %}text-[#991B1B]{% else %}text-[#78716C]{% endif %}">{{ review.critical_count }}</div>
+          <div class="text-[10px] text-[#A8A29E] uppercase">Crit</div>
+        </div>
+        <div class="w-px h-6 bg-[#E4E4E1]"></div>
+        <div class="text-center px-2">
+          <div class="font-mono font-semibold text-sm {% if review.high_count > 0 %}text-[#9A3412]{% else %}text-[#78716C]{% endif %}">{{ review.high_count }}</div>
+          <div class="text-[10px] text-[#A8A29E] uppercase">High</div>
+        </div>
+        <div class="w-px h-6 bg-[#E4E4E1]"></div>
+        <div class="text-center px-2">
+          <div class="font-mono font-semibold text-sm text-[#44403C]">{{ review.medium_count }}</div>
+          <div class="text-[10px] text-[#A8A29E] uppercase">Med</div>
+        </div>
+        <div class="w-px h-6 bg-[#E4E4E1]"></div>
+        <div class="text-center px-2">
+          <div class="font-mono text-sm text-[#78716C]">{{ review.low_count }}</div>
+          <div class="text-[10px] text-[#A8A29E] uppercase">Low</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Attention / Human Approval Gate (When Waiting) -->
+  {% if review.status.value == "WAITING_FOR_APPROVAL" %}
+  <div class="rounded border border-[#FCD34D] bg-[#FFFBEB] p-5 shadow-2xs">
+    <div class="flex items-start gap-3.5">
+      <div class="w-8 h-8 rounded bg-[#FEF3C7] border border-[#FDE68A] text-[#B45309] flex items-center justify-center shrink-0 mt-0.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      </div>
+
+      <div class="flex-1">
+        <h2 class="text-sm font-semibold text-[#92400E]">Human Approval Gate: Explicit Decision Required</h2>
+        <p class="text-xs text-[#B45309] mt-1 leading-relaxed">
+          PRism halted execution because deterministic risk policies flagged high-risk components. Specialist analysis is complete, and untrusted inputs have been quarantined. Explicit human sign-off is required to resume the LangGraph workflow and publish comments to GitHub.
+        </p>
+
+        <!-- Approval Action Form -->
+        <form action="/reviews/{{ review.review_id }}/action" method="post" class="mt-4 space-y-3">
+          <div>
+            <label for="notes" class="block text-[11px] font-medium text-[#78716C] uppercase tracking-wide">
+              Reviewer Audit Notes
+            </label>
+            <input type="text" 
+                   id="notes" 
+                   name="notes" 
+                   placeholder="e.g. Inspected SQL interpolation in auth/login.py; verified remediation." 
+                   class="mt-1 w-full px-3 py-2 text-xs rounded border border-[#E4E4E1] bg-[#FFFFFF] text-[#1C1917] placeholder-[#A8A29E] focus:outline-none focus:ring-1 focus:ring-[#B45309] focus:border-[#B45309]">
+          </div>
+
+          <div class="flex items-center gap-2.5 pt-1">
+            <button type="submit" 
+                    name="decision" 
+                    value="approve" 
+                    class="px-4 py-2 rounded text-xs font-semibold text-[#FFFFFF] bg-[#15803D] hover:bg-[#166534] transition shadow-2xs cursor-pointer flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              <span>Approve & Publish Review</span>
+            </button>
+
+            <button type="submit" 
+                    name="decision" 
+                    value="reject" 
+                    class="px-4 py-2 rounded text-xs font-semibold text-[#991B1B] bg-[#FFFFFF] hover:bg-[#FEE2E2] border border-[#FCA5A5] transition shadow-2xs cursor-pointer flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <span>Reject Review</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Resolution Banner (When Already Resolved) -->
+  {% if review.status.value in ["APPROVED", "PUBLISHED", "REJECTED"] %}
+  <div class="rounded border p-4 text-xs flex items-center justify-between {% if review.status.value == 'REJECTED' %}border-[#D4D4D8] bg-[#F4F4F5] text-[#52525B]{% else %}border-[#BBF7D0] bg-[#F0FDF4] text-[#166534]{% endif %}">
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full {% if review.status.value == 'REJECTED' %}bg-[#71717A]{% else %}bg-[#16A34A]{% endif %}"></span>
+      <span class="font-medium">
+        {% if review.status.value == 'PUBLISHED' %}
+          Review Approved & Published to GitHub (Publication ID: <span class="font-mono font-normal">{{ review.publication_id }}</span>)
+        {% elif review.status.value == 'APPROVED' %}
+          Review Approved by Human
+        {% else %}
+          Review Rejected by Human
+        {% endif %}
+      </span>
+      {% if review.reviewer_notes %}
+        <span class="text-[#78716C]">&bull; Notes: "{{ review.reviewer_notes }}"</span>
+      {% endif %}
+    </div>
+    
+    <div class="text-[11px] font-mono text-[#78716C]">
+      {{ review.updated_at[:19].replace('T', ' ') }}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- 2-Column Work Layout: Main Analysis + Metadata -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    
+    <!-- Left 2 Cols: Guardrails, Policy, Synthesis, Findings -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Guardrails & Untrusted Content Status -->
+      <div class="rounded border {% if review.injection_detected %}border-[#FCA5A5] bg-[#FEF2F2]{% else %}border-[#E4E4E1] bg-[#FFFFFF]{% endif %} p-4 shadow-2xs">
+        <div class="flex items-start gap-3">
+          <div class="w-6 h-6 rounded flex items-center justify-center shrink-0 {% if review.injection_detected %}bg-[#FEE2E2] text-[#991B1B]{% else %}bg-[#F0FDF4] text-[#166534]{% endif %}">
+            {% if review.injection_detected %}
+              <svg class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+            {% else %}
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            {% endif %}
+          </div>
+
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <h2 class="text-xs font-semibold tracking-tight {% if review.injection_detected %}text-[#991B1B]{% else %}text-[#1C1917]{% endif %} uppercase">
+                Guardrails & Untrusted Input Isolation
+              </h2>
+              {% if review.injection_detected %}
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#FEE2E2] text-[#991B1B] font-semibold">ADVERSARIAL ATTEMPT DETECTED</span>
+              {% else %}
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-[#DCFCE7] text-[#166534] font-medium">CLEAN SANITIZATION</span>
+              {% endif %}
+            </div>
+
+            {% if review.injection_detected %}
+              <p class="text-xs text-[#991B1B] leading-relaxed">
+                PRism detected potential instruction override or jailbreak patterns (<code class="font-mono font-medium">{{ review.injection_patterns|join(', ') }}</code>) with confidence <span class="font-mono">{{ "%.0f"|format(review.injection_confidence * 100) }}%</span>. All untrusted contents were safely quarantined inside strict XML isolation tags (<code>&lt;untrusted_input&gt;</code>) to neutralize prompt compromise.
+              </p>
+            {% else %}
+              <p class="text-xs text-[#78716C]">
+                All PR metadata, comments, and diff contents sanitized of bidirectional control characters and framed within XML isolation boundaries. Zero prompt-injection patterns detected.
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Deterministic Policy Rules -->
+      <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-4 shadow-2xs space-y-3">
+        <div class="flex items-center justify-between border-b border-[#E4E4E1] pb-2">
+          <h2 class="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">Deterministic Policy Engine</h2>
+          <span class="text-[11px] font-mono text-[#78716C]">Zero-LLM Machine Policy</span>
+        </div>
+
+        {% if review.policy_reasons %}
+          <div class="space-y-2">
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <span class="text-[11px] text-[#78716C]">Matched Rules:</span>
+              {% for rule in review.matched_rules %}
+                <span class="text-[11px] font-mono px-1.5 py-0.5 rounded bg-[#F4F4F2] text-[#1C1917] border border-[#E4E4E1] font-medium">{{ rule }}</span>
+              {% endfor %}
+            </div>
+
+            <ul class="space-y-1 pt-1">
+              {% for reason in review.policy_reasons %}
+                <li class="text-xs text-[#44403C] flex items-start gap-2">
+                  <span class="text-[#B45309] font-bold mt-0.5">&bull;</span>
+                  <span>{{ reason }}</span>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        {% else %}
+          <div class="text-xs text-[#78716C]">
+            Standard PR review. No sensitive filepaths, secret patterns, or high severity threshold policy triggers were activated.
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Synthesis Summary -->
+      {% if review.summary %}
+      <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-4 shadow-2xs space-y-2">
+        <h2 class="text-xs font-semibold text-[#1C1917] tracking-wider uppercase">Triage Synthesis Summary</h2>
+        <p class="text-xs text-[#44403C] leading-relaxed">{{ review.summary }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Specialist Agent Findings -->
+      <div class="space-y-3">
+        <div class="flex items-center justify-between pb-1">
+          <h2 class="text-sm font-semibold text-[#1C1917]">Specialist Findings ({{ review.findings_count }})</h2>
+          <span class="text-[11px] text-[#78716C]">Code Reviewer &bull; Security Reviewer &bull; Test Suggester</span>
+        </div>
+
+        {% if review.raw_findings %}
+          <div class="space-y-3">
+            {% for f in review.raw_findings %}
+            <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-4 shadow-2xs space-y-3 hover:border-[#D4D4CE] transition">
+              
+              <!-- Finding Header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="space-y-1">
+                  <div class="flex items-center gap-2">
+                    {% if f.severity|lower == "critical" %}
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5]">CRITICAL</span>
+                    {% elif f.severity|lower == "high" %}
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-[#FFEDD5] text-[#9A3412] border border-[#FDBA74]">HIGH</span>
+                    {% elif f.severity|lower == "medium" %}
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[#FEF9C3] text-[#854D0E] border border-[#FDE047]">MEDIUM</span>
+                    {% else %}
+                      <span class="px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-[#F4F4F2] text-[#57534E] border border-[#E4E4E1]">LOW</span>
+                    {% endif %}
+
+                    <span class="text-[11px] font-mono text-[#78716C] uppercase">{{ f.category }}</span>
+                  </div>
+
+                  <h3 class="text-sm font-semibold text-[#1C1917]">{{ f.title }}</h3>
+                </div>
+
+                <div class="text-[11px] font-mono text-[#78716C] bg-[#F4F4F2] px-2 py-0.5 rounded border border-[#E4E4E1]">
+                  {{ f.specialist }}
+                </div>
+              </div>
+
+              <!-- File & Line Target -->
+              <div class="text-xs font-mono bg-[#F9F9F8] px-2.5 py-1 rounded border border-[#E4E4E1] text-[#1C1917] flex items-center justify-between">
+                <span>{{ f.file }}{% if f.line %}:{{ f.line }}{% endif %}</span>
+                <button type="button" 
+                        onclick="copyToClipboard('{{ f.file }}{% if f.line %}:{{ f.line }}{% endif %}', this)" 
+                        class="text-[10px] text-[#A8A29E] hover:text-[#1C1917] cursor-pointer">
+                  Copy
+                </button>
+              </div>
+
+              <!-- Technical Description -->
+              <p class="text-xs text-[#44403C] leading-relaxed">{{ f.description }}</p>
+
+              <!-- Recommendation Block -->
+              {% if f.recommendation %}
+              <div class="rounded border border-[#BBF7D0] bg-[#F0FDF4] p-3 text-xs space-y-1">
+                <div class="font-medium text-[#166534] text-[11px] uppercase tracking-wider">Recommendation</div>
+                <div class="text-[#15803D] leading-relaxed">{{ f.recommendation }}</div>
+              </div>
+              {% endif %}
+
+              <!-- Footer Meta -->
+              <div class="pt-2 border-t border-[#F4F4F2] flex items-center justify-between text-[10px] text-[#A8A29E] font-mono">
+                <span>Category: {{ f.category }}</span>
+                <span>Confidence: {{ "%.0f"|format(f.confidence * 100) }}%</span>
+              </div>
+
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-8 text-center text-[#78716C] text-xs">
+            No issues or vulnerabilities detected by specialist agents.
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right 1 Col: Review Details & Architecture Metadata -->
+    <div class="space-y-6">
+
+      <!-- Review Metadata Inspector -->
+      <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-4 shadow-2xs space-y-3">
+        <h2 class="text-xs font-semibold text-[#1C1917] tracking-wider uppercase border-b border-[#E4E4E1] pb-2">
+          Execution Metadata
+        </h2>
+
+        <div class="space-y-2 text-xs">
+          <div>
+            <div class="text-[11px] text-[#78716C]">Review ID:</div>
+            <div class="font-mono text-[#1C1917] break-all select-all text-[11px]">{{ review.review_id }}</div>
+          </div>
+
+          <div>
+            <div class="text-[11px] text-[#78716C]">LangGraph Thread:</div>
+            <div class="font-mono text-[#1C1917] break-all text-[11px]">{{ review.thread_id }}</div>
+          </div>
+
+          <div>
+            <div class="text-[11px] text-[#78716C]">Head Commit:</div>
+            <div class="font-mono text-[#1C1917] text-[11px]">{{ review.head_sha }}</div>
+          </div>
+
+          <div>
+            <div class="text-[11px] text-[#78716C]">Timestamp:</div>
+            <div class="font-mono text-[#1C1917] text-[11px]">{{ review.created_at[:19].replace('T', ' ') }}</div>
+          </div>
+
+          {% if review.publication_id %}
+          <div>
+            <div class="text-[11px] text-[#78716C]">Publication ID:</div>
+            <div class="font-mono text-[#166534] text-[11px] font-medium">{{ review.publication_id }}</div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Security Checklist Box -->
+      <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] p-4 shadow-2xs space-y-2.5">
+        <h2 class="text-xs font-semibold text-[#1C1917] tracking-wider uppercase border-b border-[#E4E4E1] pb-2">
+          Safety Guarantees
+        </h2>
+
+        <ul class="space-y-1.5 text-xs text-[#57534E]">
+          <li class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-[#16A34A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Read-only GitHub extraction</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-[#16A34A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>XML delimiter input quarantine</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-[#16A34A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Deterministic zero-LLM policy</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-[#16A34A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>Fail-closed human gate</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <svg class="w-3.5 h-3.5 text-[#16A34A] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+            <span>SHA-deduplicated publishing</span>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}

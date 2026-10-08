@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6 max-w-[1200px]">
+
+  <!-- Page Header & Action Controls -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-[#E4E4E1]">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-lg font-semibold tracking-tight text-[#1C1917]">Pull Request Triage Dashboard</h1>
+        <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-[#F4F4F2] text-[#78716C] border border-[#E4E4E1]">
+          {{ reviews|length }} Reviews
+        </span>
+      </div>
+      <p class="text-xs text-[#78716C] mt-0.5">
+        Multi-agent triage, deterministic risk policy evaluation, and fail-closed human approval gates.
+      </p>
+    </div>
+
+    <!-- Actions & Manual Trigger -->
+    <div class="flex items-center gap-2.5">
+      <form action="/reviews/demo" method="post" class="inline">
+        <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#FFFFFF] bg-[#1C1917] hover:bg-[#292524] rounded transition shadow-2xs cursor-pointer">
+          <svg class="w-3.5 h-3.5 text-[#F59E0B]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>Run Demo Review</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Metric Strip: Compact Developer Summary -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    
+    <div class="p-3.5 rounded border border-[#E4E4E1] bg-[#FFFFFF] shadow-2xs">
+      <div class="text-[11px] font-medium text-[#78716C] tracking-wide">Total Reviews</div>
+      <div class="mt-1 flex items-baseline gap-2">
+        <span class="text-2xl font-semibold font-mono tracking-tight text-[#1C1917]">{{ stats.total }}</span>
+        <span class="text-[11px] text-[#A8A29E]">processed</span>
+      </div>
+    </div>
+
+    <div class="p-3.5 rounded border border-[#E4E4E1] bg-[#FFFFFF] shadow-2xs">
+      <div class="text-[11px] font-medium text-[#78716C] tracking-wide flex items-center justify-between">
+        <span>Needs Approval</span>
+        {% if stats.waiting_approval > 0 %}<span class="w-1.5 h-1.5 rounded-full bg-[#EA580C]"></span>{% endif %}
+      </div>
+      <div class="mt-1 flex items-baseline gap-2">
+        <span class="text-2xl font-semibold font-mono tracking-tight {% if stats.waiting_approval > 0 %}text-[#9A3412]{% else %}text-[#1C1917]{% endif %}">{{ stats.waiting_approval }}</span>
+        <span class="text-[11px] text-[#A8A29E]">paused at gate</span>
+      </div>
+    </div>
+
+    <div class="p-3.5 rounded border border-[#E4E4E1] bg-[#FFFFFF] shadow-2xs">
+      <div class="text-[11px] font-medium text-[#78716C] tracking-wide flex items-center justify-between">
+        <span>High / Critical</span>
+        {% if stats.high_risk > 0 %}<span class="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>{% endif %}
+      </div>
+      <div class="mt-1 flex items-baseline gap-2">
+        <span class="text-2xl font-semibold font-mono tracking-tight {% if stats.high_risk > 0 %}text-[#991B1B]{% else %}text-[#1C1917]{% endif %}">{{ stats.high_risk }}</span>
+        <span class="text-[11px] text-[#A8A29E]">policy flagged</span>
+      </div>
+    </div>
+
+    <div class="p-3.5 rounded border border-[#E4E4E1] bg-[#FFFFFF] shadow-2xs">
+      <div class="text-[11px] font-medium text-[#78716C] tracking-wide flex items-center justify-between">
+        <span>Published</span>
+        {% if stats.published > 0 %}<span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>{% endif %}
+      </div>
+      <div class="mt-1 flex items-baseline gap-2">
+        <span class="text-2xl font-semibold font-mono tracking-tight text-[#166534]">{{ stats.published }}</span>
+        <span class="text-[11px] text-[#A8A29E]">to GitHub</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Filter Navigation & Table Container -->
+  <div class="rounded border border-[#E4E4E1] bg-[#FFFFFF] shadow-2xs overflow-hidden">
+    
+    <!-- Filter Tabs Header -->
+    <div class="px-4 py-2.5 border-b border-[#E4E4E1] bg-[#F9F9F8] flex items-center justify-between gap-4">
+      <div class="flex items-center gap-1.5 text-xs" id="filter-tabs">
+        <button type="button" onclick="filterReviews('all')" id="tab-all" class="px-2.5 py-1 rounded text-xs font-medium bg-[#FFFFFF] text-[#1C1917] border border-[#E4E4E1] shadow-2xs transition">
+          All ({{ reviews|length }})
+        </button>
+        <button type="button" onclick="filterReviews('waiting')" id="tab-waiting" class="px-2.5 py-1 rounded text-xs font-medium text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F4F2] transition">
+          Needs Approval ({{ stats.waiting_approval }})
+        </button>
+        <button type="button" onclick="filterReviews('high_risk')" id="tab-high_risk" class="px-2.5 py-1 rounded text-xs font-medium text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F4F2] transition">
+          High Risk ({{ stats.high_risk }})
+        </button>
+        <button type="button" onclick="filterReviews('published')" id="tab-published" class="px-2.5 py-1 rounded text-xs font-medium text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F4F2] transition">
+          Published ({{ stats.published }})
+        </button>
+      </div>
+
+      <div class="text-[11px] text-[#A8A29E] font-mono hidden sm:block">
+        Deterministic Triage
+      </div>
+    </div>
+
+    <!-- Reviews Table -->
+    {% if reviews %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs text-[#1C1917]" id="reviews-table">
+        <thead class="bg-[#F9F9F8] text-[11px] font-medium text-[#78716C] uppercase tracking-wider border-b border-[#E4E4E1]">
+          <tr>
+            <th class="px-4 py-2.5 font-medium">Repository / PR</th>
+            <th class="px-4 py-2.5 font-medium">Risk Assessment</th>
+            <th class="px-4 py-2.5 font-medium">Lifecycle Status</th>
+            <th class="px-4 py-2.5 font-medium">Findings Breakdown</th>
+            <th class="px-4 py-2.5 font-medium">Guardrails</th>
+            <th class="px-4 py-2.5 font-medium text-right">Inspect</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[#E4E4E1]">
+          {% for r in reviews %}
+          <tr class="hover:bg-[#F4F4F2]/60 transition-colors group review-row" 
+              data-status="{{ r.status.value }}" 
+              data-risk="{{ r.risk_level }}">
+            
+            <!-- Repository & PR Identity -->
+            <td class="px-4 py-3">
+              <a href="/reviews/{{ r.review_id }}" class="block">
+                <div class="font-semibold text-[#1C1917] group-hover:text-[#B45309] transition-colors flex items-center gap-1.5">
+                  <span>{{ r.repository }}</span>
+                  <span class="font-mono text-[#78716C]">#{{ r.pull_number }}</span>
+                </div>
+                <div class="text-[11px] text-[#A8A29E] font-mono mt-0.5 flex items-center gap-1.5">
+                  <span>{{ r.head_sha[:7] }}</span>
+                  <span>&bull;</span>
+                  <span>{{ r.created_at[:16].replace('T', ' ') }}</span>
+                </div>
+              </a>
+            </td>
+
+            <!-- Risk Level -->
+            <td class="px-4 py-3">
+              {% if r.risk_level == "critical" %}
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#DC2626]"></span>
+                  CRITICAL
+                </span>
+              {% elif r.risk_level == "high" %}
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-semibold bg-[#FFEDD5] text-[#9A3412] border border-[#FDBA74]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#EA580C]"></span>
+                  HIGH
+                </span>
+              {% elif r.risk_level == "medium" %}
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-[#FEF9C3] text-[#854D0E] border border-[#FDE047]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#CA8A04]"></span>
+                  MEDIUM
+                </span>
+              {% else %}
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-[#DCFCE7] text-[#166534] border border-[#86EFAC]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>
+                  LOW
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Lifecycle Status -->
+            <td class="px-4 py-3">
+              {% if r.status.value == "WAITING_FOR_APPROVAL" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#FFFBEB] text-[#B45309] border border-[#FCD34D]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#D97706]"></span>
+                  Waiting for Human
+                </span>
+              {% elif r.status.value == "PUBLISHED" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#F0FDF4] text-[#15803D] border border-[#BBF7D0]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>
+                  Published
+                </span>
+              {% elif r.status.value == "APPROVED" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#EFF6FF] text-[#1E40AF] border border-[#BFDBFE]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#2563EB]"></span>
+                  Approved
+                </span>
+              {% elif r.status.value == "REJECTED" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#F4F4F5] text-[#52525B] border border-[#D4D4D8]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#71717A]"></span>
+                  Rejected
+                </span>
+              {% elif r.status.value == "RUNNING" %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#6366F1]"></span>
+                  Running
+                </span>
+              {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-[#F4F4F2] text-[#57534E] border border-[#E4E4E1]">
+                  {{ r.status.value }}
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Findings Breakdown -->
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-1.5 text-[11px]">
+                {% if r.critical_count > 0 %}
+                  <span class="px-1.5 py-0.2 rounded font-mono font-semibold bg-[#FEE2E2] text-[#991B1B] border border-[#FCA5A5]">{{ r.critical_count }} crit</span>
+                {% endif %}
+                {% if r.high_count > 0 %}
+                  <span class="px-1.5 py-0.2 rounded font-mono font-semibold bg-[#FFEDD5] text-[#9A3412] border border-[#FDBA74]">{{ r.high_count }} high</span>
+                {% endif %}
+                {% if r.medium_count > 0 %}
+                  <span class="px-1.5 py-0.2 rounded font-mono bg-[#F4F4F2] text-[#44403C] border border-[#E4E4E1]">{{ r.medium_count }} med</span>
+                {% endif %}
+                {% if r.findings_count == 0 %}
+                  <span class="text-[#A8A29E] font-mono">0 findings</span>
+                {% endif %}
+              </div>
+            </td>
+
+            <!-- Guardrails -->
+            <td class="px-4 py-3">
+              {% if r.injection_detected %}
+                <span class="inline-flex items-center gap-1 text-[11px] text-[#991B1B] font-medium">
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                  Quarantined
+                </span>
+              {% else %}
+                <span class="text-[11px] text-[#78716C] flex items-center gap-1">
+                  <svg class="w-3 h-3 text-[#16A34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                  Clean
+                </span>
+              {% endif %}
+            </td>
+
+            <!-- Row Action -->
+            <td class="px-4 py-3 text-right">
+              <a href="/reviews/{{ r.review_id }}" class="inline-flex items-center gap-1 text-[11px] font-medium text-[#1C1917] hover:text-[#B45309] transition-colors py-1 px-2 rounded hover:bg-[#E4E4E1]/50">
+                <span>Inspect</span>
+                <span>&rarr;</span>
+              </a>
+            </td>
+
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty Filter Search Result (Hidden by default) -->
+    <div id="no-filtered-reviews" class="hidden p-8 text-center text-[#78716C] text-xs">
+      No reviews match the selected filter.
+    </div>
+
+    {% else %}
+    <!-- Empty Workspace State -->
+    <div class="px-6 py-12 text-center text-[#78716C]">
+      <div class="w-10 h-10 mx-auto rounded border border-[#E4E4E1] bg-[#F9F9F8] flex items-center justify-center text-[#78716C] mb-3">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      </div>
+      <p class="text-sm font-medium text-[#1C1917]">No pull request reviews yet</p>
+      <p class="text-xs text-[#78716C] mt-1 max-w-sm mx-auto">
+        PRism has not processed any pull requests in this workspace. Trigger a webhook or click below to run a test review.
+      </p>
+      <div class="mt-4">
+        <form action="/reviews/demo" method="post" class="inline">
+          <button type="submit" class="px-3.5 py-1.5 text-xs font-medium text-[#1C1917] bg-[#FFFFFF] hover:bg-[#F4F4F2] border border-[#D4D4CE] rounded shadow-2xs transition">
+            Run Demo Review Now
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+</div>
+
+<!-- Client-side tab filter logic -->
+<script>
+  function filterReviews(filterType) {
+    const rows = document.querySelectorAll('.review-row');
+    const tabs = ['all', 'waiting', 'high_risk', 'published'];
+    let visibleCount = 0;
+
+    // Update Tab Styles
+    tabs.forEach(t => {
+      const btn = document.getElementById('tab-' + t);
+      if (btn) {
+        if (t === filterType) {
+          btn.className = 'px-2.5 py-1 rounded text-xs font-medium bg-[#FFFFFF] text-[#1C1917] border border-[#E4E4E1] shadow-2xs transition';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded text-xs font-medium text-[#78716C] hover:text-[#1C1917] hover:bg-[#F4F4F2] transition';
+        }
+      }
+    });
+
+    // Filter Rows
+    rows.forEach(row => {
+      const status = row.getAttribute('data-status');
+      const risk = row.getAttribute('data-risk');
+      let show = false;
+
+      if (filterType === 'all') {
+        show = true;
+      } else if (filterType === 'waiting') {
+        show = (status === 'WAITING_FOR_APPROVAL');
+      } else if (filterType === 'high_risk') {
+        show = (risk === 'high' || risk === 'critical');
+      } else if (filterType === 'published') {
+        show = (status === 'PUBLISHED');
+      }
+
+      if (show) {
+        row.style.display = '';
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    const noResults = document.getElementById('no-filtered-reviews');
+    if (noResults) {
+      noResults.className = (visibleCount === 0 && rows.length > 0) ? 'p-8 text-center text-[#78716C] text-xs' : 'hidden';
+    }
+  }
+
+  // Handle URL query parameter ?filter=... on load
+  document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const filter = params.get('filter');
+    if (filter && ['all', 'waiting', 'high_risk', 'published'].includes(filter)) {
+      filterReviews(filter);
+    }
+  });
+</script>
+{% endblock %}

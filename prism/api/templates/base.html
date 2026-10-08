@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-[#F9F9F8] text-[#1C1917]">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}PRism — Agentic GitHub PR Review & Triage System{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Roboto', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+          },
+          colors: {
+            stone: {
+              25: '#FCFCFB',
+              50: '#F9F9F8',
+              100: '#F4F4F2',
+              150: '#ECECE9',
+              200: '#E4E4E1',
+              300: '#D4D4CE',
+              400: '#A8A29E',
+              500: '#78716C',
+              600: '#57534E',
+              700: '#44403C',
+              800: '#292524',
+              900: '#1C1917',
+              950: '#0C0A09',
+            },
+            accent: {
+              50: '#FFFBEB',
+              100: '#FEF3C7',
+              500: '#F59E0B',
+              600: '#D97706',
+              700: '#B45309',
+              800: '#92400E',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background-color: #F9F9F8;
+      color: #1C1917;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    code, pre, .font-mono {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    ::selection {
+      background-color: #FEF3C7;
+      color: #92400E;
+    }
+    /* Restrained scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #F4F4F2;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #D4D4CE;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #A8A29E;
+    }
+  </style>
+</head>
+<body class="h-full min-h-screen flex flex-col bg-[#F9F9F8] text-[#1C1917]">
+
+  <!-- Top System Navigation Bar -->
+  <header class="border-b border-[#E4E4E1] bg-[#FFFFFF] sticky top-0 z-40">
+    <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between">
+      
+      <!-- Brand & Workspace Breadcrumb -->
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-2.5 text-[#1C1917] hover:text-[#0C0A09] transition-colors group">
+          <!-- Refraction Geometric Mark -->
+          <div class="w-6 h-6 rounded bg-[#1C1917] text-[#FFFFFF] flex items-center justify-center shadow-xs">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="12 2 2 22 22 22 12 2" stroke="currentColor" fill="none" />
+              <line x1="12" y1="2" x2="12" y2="22" stroke="currentColor" />
+              <path d="M5 16l7-4 7 4" stroke="#F59E0B" />
+            </svg>
+          </div>
+          <span class="font-semibold text-sm tracking-tight text-[#1C1917]">PRism</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded border border-[#E4E4E1] bg-[#F4F4F2] text-[#78716C]">v0.1.0</span>
+        </a>
+
+        <div class="h-4 w-px bg-[#E4E4E1] hidden sm:block"></div>
+
+        <div class="hidden sm:flex items-center gap-1.5 text-xs text-[#78716C]">
+          <span>github.com</span>
+          <span class="text-[#A8A29E]">/</span>
+          <span class="text-[#44403C] font-medium">pull-requests</span>
+        </div>
+      </div>
+
+      <!-- Right System Info & Links -->
+      <div class="flex items-center gap-4 text-xs font-medium text-[#78716C]">
+        <div class="hidden md:flex items-center gap-2 px-2.5 py-1 rounded border border-[#E4E4E1] bg-[#F9F9F8]">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#16A34A]"></span>
+          <span class="text-[#44403C]">Engine Active</span>
+          <span class="text-[#A8A29E] font-mono">SQLite Checkpointed</span>
+        </div>
+
+        <a href="/api/reviews" target="_blank" class="hover:text-[#1C1917] transition-colors py-1">API</a>
+        <a href="/docs" target="_blank" class="hover:text-[#1C1917] transition-colors py-1 hidden sm:inline">Docs</a>
+        <a href="/health" target="_blank" class="hover:text-[#1C1917] transition-colors py-1">Health</a>
+
+        <!-- Quick Demo Run -->
+        <form action="/reviews/demo" method="post" class="inline">
+          <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#1C1917] bg-[#FFFFFF] hover:bg-[#F4F4F2] border border-[#D4D4CE] rounded hover:border-[#A8A29E] transition-all shadow-2xs cursor-pointer">
+            <svg class="w-3 h-3 text-[#B45309]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <span>Run Demo Review</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <!-- Workspace Shell: Sidebar + Content -->
+  <div class="flex-1 max-w-[1440px] w-full mx-auto flex flex-col md:flex-row">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-56 lg:w-60 border-b md:border-b-0 md:border-r border-[#E4E4E1] bg-[#F4F4F2]/50 p-4 shrink-0 flex flex-col justify-between">
+      <div class="space-y-6">
+        
+        <!-- Navigation Section -->
+        <div>
+          <div class="px-2 pb-2 text-[11px] font-semibold tracking-wider text-[#78716C] uppercase">Workspace</div>
+          <nav class="space-y-1">
+            <a href="/" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-medium {% if request.url.path == '/' %}bg-[#FFFFFF] text-[#1C1917] shadow-2xs border border-[#E4E4E1]{% else %}text-[#57534E] hover:text-[#1C1917] hover:bg-[#ECECE9]{% endif %} transition">
+              <span class="flex items-center gap-2">
+                <svg class="w-3.5 h-3.5 text-[#78716C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+                <span>All Reviews</span>
+              </span>
+              {% if stats is defined and stats.total %}
+              <span class="font-mono text-[10px] text-[#78716C] bg-[#ECECE9] px-1.5 py-0.2 rounded">{{ stats.total }}</span>
+              {% endif %}
+            </a>
+
+            <a href="/?filter=waiting" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-medium text-[#57534E] hover:text-[#1C1917] hover:bg-[#ECECE9] transition">
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#EA580C]"></span>
+                <span>Needs Approval</span>
+              </span>
+              {% if stats is defined and stats.waiting_approval %}
+              <span class="font-mono text-[10px] text-[#9A3412] bg-[#FFEDD5] px-1.5 py-0.2 rounded font-semibold">{{ stats.waiting_approval }}</span>
+              {% endif %}
+            </a>
+
+            <a href="/?filter=high_risk" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-medium text-[#57534E] hover:text-[#1C1917] hover:bg-[#ECECE9] transition">
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#DC2626]"></span>
+                <span>High Risk</span>
+              </span>
+              {% if stats is defined and stats.high_risk %}
+              <span class="font-mono text-[10px] text-[#991B1B] bg-[#FEE2E2] px-1.5 py-0.2 rounded font-semibold">{{ stats.high_risk }}</span>
+              {% endif %}
+            </a>
+
+            <a href="/?filter=published" class="flex items-center justify-between px-2.5 py-1.5 rounded text-xs font-medium text-[#57534E] hover:text-[#1C1917] hover:bg-[#ECECE9] transition">
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#16A34A]"></span>
+                <span>Published</span>
+              </span>
+              {% if stats is defined and stats.published %}
+              <span class="font-mono text-[10px] text-[#166534] bg-[#DCFCE7] px-1.5 py-0.2 rounded font-semibold">{{ stats.published }}</span>
+              {% endif %}
+            </a>
+          </nav>
+        </div>
+
+        <!-- System Architecture Info -->
+        <div class="pt-4 border-t border-[#E4E4E1] space-y-2.5">
+          <div class="px-2 text-[11px] font-semibold tracking-wider text-[#78716C] uppercase">Security & Engine</div>
+          
+          <div class="px-2 py-1.5 text-[11px] text-[#57534E] space-y-1.5 bg-[#FFFFFF] rounded border border-[#E4E4E1]">
+            <div class="flex items-center justify-between">
+              <span class="text-[#78716C]">Firewall:</span>
+              <span class="font-mono text-[10px] text-[#166534] bg-[#DCFCE7] px-1 py-0.5 rounded font-medium">READ / COMMENT</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#78716C]">Dangerous Ops:</span>
+              <span class="font-mono text-[10px] text-[#991B1B] bg-[#FEE2E2] px-1 py-0.5 rounded font-medium">DENIED (13)</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#78716C]">Guardrails:</span>
+              <span class="text-[#1C1917] font-medium">Deterministic XML</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-[#78716C]">Human Gate:</span>
+              <span class="text-[#1C1917] font-medium">Fail-Closed</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sidebar Footer -->
+      <div class="pt-6 border-t border-[#E4E4E1] text-[11px] text-[#78716C] px-2 space-y-1">
+        <div class="flex items-center justify-between">
+          <span>MCP Server:</span>
+          <span class="font-mono text-[#44403C]">prism-github-mcp</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span>Checkpoints:</span>
+          <span class="font-mono text-[#44403C]">SQLite Native</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="flex-1 min-w-0 bg-[#F9F9F8] p-4 sm:p-6 lg:p-8">
+      {% block content %}{% endblock %}
+    </main>
+
+  </div>
+
+  <!-- Global Footer -->
+  <footer class="border-t border-[#E4E4E1] bg-[#FFFFFF] py-4 text-center text-xs text-[#78716C]">
+    <div class="max-w-[1440px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="font-semibold text-[#1C1917]">PRism</span>
+        <span class="text-[#D4D4CE]">&bull;</span>
+        <span>Agentic Pull Request Review & Triage System</span>
+      </div>
+      <div class="flex items-center gap-3 text-[11px] text-[#A8A29E]">
+        <span>LangGraph Orchestrated</span>
+        <span>&bull;</span>
+        <span>Custom MCP Server</span>
+        <span>&bull;</span>
+        <span>Zero External LLM Leakage</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Notification & Copy Utilities -->
+  <script>
+    function copyToClipboard(text, element) {
+      navigator.clipboard.writeText(text).then(function() {
+        const originalText = element.innerText;
+        element.innerText = 'Copied!';
+        element.classList.add('text-[#15803D]');
+        setTimeout(function() {
+          element.innerText = originalText;
+          element.classList.remove('text-[#15803D]');
+        }, 1500);
+      });
+    }
+  </script>
+</body>
+</html>
